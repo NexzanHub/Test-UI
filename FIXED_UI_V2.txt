@@ -331,10 +331,17 @@ function Library:CreateWindow(Config)
 	LineHeader.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 	LineHeader.BorderSizePixel = 0
 
+    --SEARCH BOX
+    local SearchBox = Instance.new("TextBox", Sidebar)
+SearchBox.Size = UDim2.new(1,-16,0,28)
+SearchBox.Position = UDim2.new(0,8,0,62)
+
+SearchBox.PlaceholderText = "Search Tab..."
+
 	-- TAB CONTAINER (SCROLLABLE)
 	local TabContainer = Instance.new("ScrollingFrame", Sidebar)
-	TabContainer.Size = UDim2.new(1, 0, 1, -125)
-	TabContainer.Position = UDim2.new(0, 0, 0, 60)
+	TabContainer.Size = UDim2.new(1,0,1,-160)
+	TabContainer.Position = UDim2.new(0,0,0,95)
 	TabContainer.BackgroundTransparency = 1
 	TabContainer.ScrollBarThickness = 0
 	TabContainer.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -346,6 +353,24 @@ function Library:CreateWindow(Config)
 	TabListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 		TabContainer.CanvasSize = UDim2.new(0, 0, 0, TabListLayout.AbsoluteContentSize.Y)
 	end)
+
+SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+
+	local Search = string.lower(SearchBox.Text)
+
+	for _, Button in ipairs(TabContainer:GetChildren()) do
+
+		if Button:IsA("TextButton") and Button:FindFirstChild("TabLayout") then
+
+			local Name = string.lower(Button.TabLayout.Txt.Text)
+
+			Button.Visible = string.find(Name, Search) ~= nil
+
+		end
+
+	end
+
+end)
 
 	---------------------------------------------------------
 	-- [ FOOTER AVATAR PROFILE ]
