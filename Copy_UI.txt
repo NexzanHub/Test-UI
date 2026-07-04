@@ -5,8 +5,6 @@
     Version: 2.0.0
 ]]
 
-local NexzanUI = {}
-
 local TweenService = game:GetService("TweenService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -765,4 +763,72 @@ function NexzanUI:MakeWindow(config)
     return WindowLibrary
 end
 
-return NexzanUI
+local Window = NexzanUI:MakeWindow({
+    Name = "Nexzan Hub Premium",
+    Description = "Made By Akuma",
+    Version = "2.1.0"
+})
+
+-- MEMBUAT TAB PERTAMA
+local TabMain = Window:MakeTab({
+    Name = "Main Features",
+    Icon = "" -- Icon opsional
+})
+
+TabMain:AddLabel({
+    Name = "⚡ Basic Auto Farm"
+})
+
+TabMain:AddToggle({
+    Name = "Auto Farm Lemons",
+    Description = "Otomatis farming lemon tanpa henti.",
+    Default = false,
+    Callback = function(state)
+        print("Auto Farm Lemons saat ini: " .. tostring(state))
+        -- Masukkan logika farm disini
+    end
+})
+
+TabMain:AddButton({
+    Name = "Claim Reward",
+    Description = "Klaim reward harian sekarang.",
+    Callback = function()
+        print("Reward Berhasil Di Klaim!")
+    end
+})
+
+TabMain:AddSlider({
+    Name = "Hitbox Extender",
+    Description = "Perbesar hitbox pemain.",
+    Min = 1,
+    Max = 100,
+    Default = 15,
+    Callback = function(value)
+        print("Ukuran Hitbox: " .. value)
+    end
+})
+
+-- MEMBUAT TAB KEDUA
+local TabMisc = Window:MakeTab({
+    Name = "Misc & Settings"
+})
+
+TabMisc:AddDropdown({
+    Name = "Select Weapon",
+    Description = "Pilih senjata untuk Auto Farm.",
+    Options = {"Sword", "Gun", "Melee", "Blox Fruit"},
+    Default = "Sword",
+    Callback = function(value)
+        print("Senjata terpilih: " .. value)
+    end
+})
+
+TabMisc:AddTextbox({
+    Name = "Target Player",
+    Description = "Masukkan nama player untuk di spectate.",
+    Placeholder = "Username...",
+    Callback = function(text)
+        print("Mencari Player: " .. text)
+    end
+})
+
