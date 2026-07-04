@@ -1,4 +1,3 @@
-```lua
 --[[
 ================================================================================
                     NEXZAN PREMIUM UI LIBRARY (v2.3 - AUTO-COLLAPSE UPDATE)
@@ -1217,5 +1216,3 @@ function Library:CreateWindow(Config)
 end
 
 return Library
-
-```
