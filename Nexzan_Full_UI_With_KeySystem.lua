@@ -12,7 +12,7 @@
 -- ========================== CONFIG ==========================
 local KeySystemConfig = {
     Title = "Key System - Nexzan",
-    Subtitle = "Keys?",
+    Subtitle = "Keys? Pencet GetKey",
     
     -- === EDIT DI SINI ===
     ValidKeys = {
@@ -792,28 +792,3 @@ local function LoadNexzanLibrary()
 
     return Library
 end
-
--- ========================== START SCRIPT ==========================
-CreateKeySystem(function()
-    -- Key berhasil → Load UI Library
-    local Nexzan = LoadNexzanLibrary()
-    
-    -- Contoh penggunaan (bisa dihapus atau diedit)
-    local Window = Nexzan:CreateWindow({
-        Title = "Nexzan Premium",
-        Size = UDim2.new(0, 620, 0, 420)
-    })
-    
-    local MainTab = Window:CreateTab("Main", "rbxassetid://4483362458")
-    MainTab:CreateButton("Test Button", "Ini adalah tombol contoh", function()
-        print("Button diklik!")
-    end)
-    
-    MainTab:CreateToggle("Auto Farm", "Aktifkan auto farm", false, function(state)
-        print("Auto Farm:", state)
-    end)
-    
-    print("[Nexzan] UI Library berhasil dimuat setelah Key System.")
-end)
-
-print("[Nexzan] Key System aktif. Edit ValidKeys & GetKeyLink di bagian CONFIG.")
