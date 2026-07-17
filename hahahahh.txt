@@ -1,4 +1,3 @@
-```lua
 --[[
     🌙 BloodMoon UI Library
     Version : 2.0.0
@@ -697,5 +696,3 @@ function BloodMoon:CreateWindow(options)
 end
 
 return BloodMoon
-
-```
