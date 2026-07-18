@@ -525,7 +525,7 @@ function Library.new(config)
         local panel = Instance.new("Frame")
         panel.Name = name
         panel.AnchorPoint = Vector2.new(0.5, 0.5)
-        panel.Size = UDim2.new(0.82, 0, 0, 300)
+        panel.Size = UDim2.new(0, 400, 0, 280)
         panel.Position = UDim2.new(0.5, 0, 0.5, 0)
         panel.BackgroundColor3 = Color3.fromRGB(8, 15, 29)
         panel.BackgroundTransparency = 0.08
@@ -534,8 +534,8 @@ function Library.new(config)
         panel.Parent = keyOverlay
 
         local sizeConstraint = Instance.new("UISizeConstraint")
-        sizeConstraint.MinSize = Vector2.new(300, 280)
-        sizeConstraint.MaxSize = Vector2.new(540, 300)
+        sizeConstraint.MinSize = Vector2.new(300, 260)
+        sizeConstraint.MaxSize = Vector2.new(500, 280)
         sizeConstraint.Parent = panel
 
         local corner = Instance.new("UICorner")
