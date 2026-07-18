@@ -158,8 +158,10 @@ end
 local Library = {}
 Library.__index = Library
 
-function Library.new()
+function Library.new(config)
+    config = config or {}
     local self = setmetatable({}, Library)
+    self.Config = config
     self.Theme = {
         MainBackground = Color3.fromRGB(15, 15, 15),
         MainBorder = Color3.fromRGB(45, 45, 45),
@@ -494,6 +496,19 @@ function Library.new()
             end
         end
     end)
+
+    -- ============================================================
+    --  KEY SYSTEM (DITAMBAHKAN) - tampil sebelum UI utama
+    -- ============================================================
+    if not (config.SkipKey) then
+        local ok, err = pcall(function()
+            self:CreateKeySystem(config)
+        end)
+        if not ok then
+            warn("KeySystem error:", err)
+            if self.MainFrame then self.MainFrame.Visible = true end
+        end
+    end
 
     return self
 end
@@ -1577,6 +1592,375 @@ function Library:CreateTab(tabName, tabIconId)
     end
 
     return Tab
+end
+
+-- ============================================================
+--  KEY SYSTEM (Fungsi Tambahan - tidak mengubah widget lain)
+--  Tampilkan layar "Access Key" dulu, baru buka UI utama.
+-- ============================================================
+function Library:CreateKeySystem(cfg)
+    cfg = cfg or self.Config or {}
+    local keys = {}
+    if type(cfg.Keys) == "table" then
+        for _, v in ipairs(cfg.Keys) do
+            keys[#keys + 1] = tostring(v)
+        end
+    elseif cfg.Key then
+        keys[#keys + 1] = tostring(cfg.Key)
+    else
+        keys[#keys + 1] = "NEXZAN-HUB"
+    end
+    local getKeyLink = cfg.GetKeyLink or "https://your-link.com/getkey"
+    local discordLink = cfg.Discord or "https://discord.gg/yourserver"
+    local validateFunc = cfg.ValidateKey
+
+    -- sembunyikan UI utama dulu
+    if self.MainFrame then self.MainFrame.Visible = false end
+
+    local screenGui = self.ScreenGui
+
+    -- backdrop
+    local backdrop = Instance.new("Frame")
+    backdrop.Name = "KeyBackdrop"
+    backdrop.Size = UDim2.new(1, 0, 1, 0)
+    backdrop.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    backdrop.BackgroundTransparency = 0.45
+    backdrop.BorderSizePixel = 0
+    backdrop.ZIndex = 50
+    backdrop.Parent = screenGui
+
+    -- partikel (efek ala referensi Key System)
+    local particleContainer = Instance.new("Frame")
+    particleContainer.Size = UDim2.new(1, 0, 1, 0)
+    particleContainer.BackgroundTransparency = 1
+    particleContainer.ZIndex = 50
+    particleContainer.Parent = backdrop
+    task.spawn(function()
+        for i = 1, 22 do
+            local s = math.random(6, 16)
+            local p = Instance.new("Frame")
+            p.Size = UDim2.new(0, s, 0, s)
+            p.Position = UDim2.new(math.random(), 0, 1.1, 0)
+            p.BackgroundColor3 = self.Theme.Accent
+            p.BackgroundTransparency = math.random(60, 85) / 100
+            p.BorderSizePixel = 0
+            p.ZIndex = 50
+            p.Parent = particleContainer
+            local pc = Instance.new("UICorner")
+            pc.CornerRadius = UDim.new(1, 0)
+            pc.Parent = p
+            local sp = math.random(20, 60) / 100
+            task.spawn(function()
+                while p.Parent and backdrop.Parent do
+                    p.Position = UDim2.new(p.Position.X.Scale, 0, p.Position.Y.Scale - sp / 100, 0)
+                    if p.Position.Y.Scale < -0.2 then
+                        p.Position = UDim2.new(math.random(), 0, 1.1, 0)
+                    end
+                    task.wait(0.03)
+                end
+            end)
+        end
+    end)
+
+    -- card
+    local card = Instance.new("Frame")
+    card.Name = "KeyCard"
+    card.Size = UDim2.new(0, 360, 0, 440)
+    card.Position = UDim2.new(0.5, -180, 0.5, -220)
+    card.BackgroundColor3 = self.Theme.MainBackground
+    card.BackgroundTransparency = 0.03
+    card.BorderSizePixel = 0
+    card.ClipsDescendants = true
+    card.ZIndex = 51
+    card.Parent = backdrop
+
+    local cardCorner = Instance.new("UICorner")
+    cardCorner.CornerRadius = UDim.new(0, 14)
+    cardCorner.Parent = card
+
+    local cardStroke = Instance.new("UIStroke")
+    cardStroke.Color = self.Theme.MainBorder
+    cardStroke.Thickness = 1.2
+    cardStroke.Parent = card
+
+    -- logo NH (pakai fungsi milik library kamu)
+    local logoHolder = Instance.new("Frame")
+    logoHolder.Size = UDim2.new(0, 46, 0, 46)
+    logoHolder.Position = UDim2.new(0.5, -23, 0, 22)
+    logoHolder.BackgroundTransparency = 1
+    logoHolder.ZIndex = 52
+    logoHolder.Parent = card
+    createNHLogo(logoHolder, UDim2.new(1, 0, 1, 0), 22)
+
+    -- judul
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 28)
+    title.Position = UDim2.new(0, 0, 0, 80)
+    title.BackgroundTransparency = 1
+    title.Font = Enum.Font.SourceSansBold
+    title.Text = "ACCESS KEY REQUIRED"
+    title.TextColor3 = self.Theme.TextPrimary
+    title.TextSize = 18
+    title.TextXAlignment = Enum.TextXAlignment.Center
+    title.ZIndex = 52
+    title.Parent = card
+
+    local subtitle = Instance.new("TextLabel")
+    subtitle.Size = UDim2.new(1, -40, 0, 34)
+    subtitle.Position = UDim2.new(0, 20, 0, 110)
+    subtitle.BackgroundTransparency = 1
+    subtitle.Font = Enum.Font.SourceSans
+    subtitle.Text = "Masukkan key untuk membuka " .. (cfg.Name or "Nexzan Hub")
+    subtitle.TextColor3 = self.Theme.TextSecondary
+    subtitle.TextSize = 13
+    subtitle.TextWrapped = true
+    subtitle.TextXAlignment = Enum.TextXAlignment.Center
+    subtitle.ZIndex = 52
+    subtitle.Parent = card
+
+    -- input
+    local inputBox = Instance.new("Frame")
+    inputBox.Size = UDim2.new(1, -48, 0, 46)
+    inputBox.Position = UDim2.new(0, 24, 0, 158)
+    inputBox.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    inputBox.ZIndex = 52
+    inputBox.Parent = card
+    local ibCorner = Instance.new("UICorner")
+    ibCorner.CornerRadius = UDim.new(0, 10)
+    ibCorner.Parent = inputBox
+    local ibStroke = Instance.new("UIStroke")
+    ibStroke.Color = self.Theme.MainBorder
+    ibStroke.Thickness = 1
+    ibStroke.Parent = inputBox
+
+    local input = Instance.new("TextBox")
+    input.Size = UDim2.new(1, -20, 1, 0)
+    input.Position = UDim2.new(0, 10, 0, 0)
+    input.BackgroundTransparency = 1
+    input.Font = Enum.Font.SourceSans
+    input.TextSize = 14
+    input.TextColor3 = self.Theme.TextPrimary
+    input.PlaceholderText = "Masukkan key disini..."
+    input.PlaceholderColor3 = self.Theme.TextSecondary
+    input.Text = ""
+    input.TextXAlignment = Enum.TextXAlignment.Left
+    input.ClearTextOnFocus = false
+    input.ZIndex = 53
+    input.Parent = inputBox
+
+    local counter = Instance.new("TextLabel")
+    counter.Size = UDim2.new(0, 60, 0, 16)
+    counter.Position = UDim2.new(1, -64, 1, -2)
+    counter.BackgroundTransparency = 1
+    counter.Font = Enum.Font.SourceSans
+    counter.Text = "0/50"
+    counter.TextColor3 = self.Theme.TextSecondary
+    counter.TextSize = 11
+    counter.TextXAlignment = Enum.TextXAlignment.Right
+    counter.ZIndex = 53
+    counter.Parent = inputBox
+
+    input:GetPropertyChangedSignal("Text"):Connect(function()
+        local t = input.Text
+        if #t > 50 then
+            input.Text = string.sub(t, 1, 50)
+        end
+        counter.Text = #input.Text .. "/50"
+    end)
+
+    -- tombol verify
+    local verifyBtn = Instance.new("TextButton")
+    verifyBtn.Size = UDim2.new(1, -48, 0, 42)
+    verifyBtn.Position = UDim2.new(0, 24, 0, 214)
+    verifyBtn.BackgroundColor3 = self.Theme.Accent
+    verifyBtn.AutoButtonColor = false
+    verifyBtn.Text = "VERIFY KEY"
+    verifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    verifyBtn.Font = Enum.Font.SourceSansBold
+    verifyBtn.TextSize = 15
+    verifyBtn.ZIndex = 52
+    verifyBtn.Parent = card
+    local vCorner = Instance.new("UICorner")
+    vCorner.CornerRadius = UDim.new(0, 10)
+    vCorner.Parent = verifyBtn
+
+    local spinner = Instance.new("Frame")
+    spinner.Size = UDim2.new(0, 22, 0, 22)
+    spinner.Position = UDim2.new(0.5, -11, 0.5, -11)
+    spinner.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    spinner.BorderSizePixel = 0
+    spinner.Visible = false
+    spinner.ZIndex = 53
+    spinner.Parent = verifyBtn
+    local spCorner = Instance.new("UICorner")
+    spCorner.CornerRadius = UDim.new(1, 0)
+    spCorner.Parent = spinner
+    local spGrad = Instance.new("UIGradient")
+    spGrad.Transparency = NumberSequence.new{
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(0.8, 0.8),
+        NumberSequenceKeypoint.new(1, 1)
+    }
+    spGrad.Parent = spinner
+
+    -- baris get key + discord
+    local btnRow = Instance.new("Frame")
+    btnRow.Size = UDim2.new(1, -48, 0, 40)
+    btnRow.Position = UDim2.new(0, 24, 0, 264)
+    btnRow.BackgroundTransparency = 1
+    btnRow.ZIndex = 52
+    btnRow.Parent = card
+
+    local getKeyBtn = Instance.new("TextButton")
+    getKeyBtn.Size = UDim2.new(0.48, 0, 1, 0)
+    getKeyBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    getKeyBtn.AutoButtonColor = false
+    getKeyBtn.Text = "GET KEY"
+    getKeyBtn.TextColor3 = self.Theme.TextPrimary
+    getKeyBtn.Font = Enum.Font.SourceSansBold
+    getKeyBtn.TextSize = 13
+    getKeyBtn.ZIndex = 53
+    getKeyBtn.Parent = btnRow
+    local gkCorner = Instance.new("UICorner")
+    gkCorner.CornerRadius = UDim.new(0, 8)
+    gkCorner.Parent = getKeyBtn
+    local gkStroke = Instance.new("UIStroke")
+    gkStroke.Color = self.Theme.MainBorder
+    gkStroke.Thickness = 1
+    gkStroke.Parent = getKeyBtn
+
+    local discordBtn = Instance.new("TextButton")
+    discordBtn.Size = UDim2.new(0.48, 0, 1, 0)
+    discordBtn.Position = UDim2.new(0.52, 0, 0, 0)
+    discordBtn.BackgroundColor3 = Color3.fromRGB(60, 70, 180)
+    discordBtn.AutoButtonColor = false
+    discordBtn.Text = "DISCORD"
+    discordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    discordBtn.Font = Enum.Font.SourceSansBold
+    discordBtn.TextSize = 13
+    discordBtn.ZIndex = 53
+    discordBtn.Parent = btnRow
+    local dcCorner = Instance.new("UICorner")
+    dcCorner.CornerRadius = UDim.new(0, 8)
+    dcCorner.Parent = discordBtn
+    local dcStroke = Instance.new("UIStroke")
+    dcStroke.Color = Color3.fromRGB(40, 45, 110)
+    dcStroke.Thickness = 1
+    dcStroke.Parent = discordBtn
+
+    -- status
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Size = UDim2.new(1, -40, 0, 40)
+    statusLabel.Position = UDim2.new(0, 20, 0, 312)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Font = Enum.Font.SourceSans
+    statusLabel.Text = ""
+    statusLabel.TextColor3 = self.Theme.TextSecondary
+    statusLabel.TextSize = 13
+    statusLabel.TextWrapped = true
+    statusLabel.TextXAlignment = Enum.TextXAlignment.Center
+    statusLabel.ZIndex = 52
+    statusLabel.Parent = card
+
+    -- helper
+    local function setStatus(msg, kind)
+        statusLabel.Text = msg
+        if kind == "ok" then
+            statusLabel.TextColor3 = self.Theme.Accent
+        elseif kind == "err" then
+            statusLabel.TextColor3 = self.Theme.NotificationColor
+        else
+            statusLabel.TextColor3 = self.Theme.TextSecondary
+        end
+    end
+
+    local spinnerTween
+    local function setLoading(v)
+        spinner.Visible = v
+        verifyBtn.Text = v and "" or "VERIFY KEY"
+        if v then
+            spinnerTween = TweenService:Create(spinner, TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), { Rotation = 360 })
+            spinnerTween:Play()
+        elseif spinnerTween then
+            spinnerTween:Cancel()
+            spinner.Rotation = 0
+        end
+    end
+
+    local function verify()
+        local k = input.Text:match("^%s*(.-)%s*$")
+        if k == "" then
+            setStatus("Masukkan key terlebih dahulu!", "err")
+            return
+        end
+        setLoading(true)
+        playSound(Sounds.Click, 0.4)
+        task.spawn(function()
+            task.wait(0.6)
+            local ok = false
+            if type(validateFunc) == "function" then
+                local s, r = pcall(validateFunc, k)
+                ok = s and r
+            end
+            if not ok then
+                for _, vk in ipairs(keys) do
+                    if vk == k then
+                        ok = true
+                        break
+                    end
+                end
+            end
+            setLoading(false)
+            if ok then
+                setStatus("Key valid! Membuka hub...", "ok")
+                playSound(Sounds.ToggleOn, 0.4)
+                TweenService:Create(backdrop, TweenInfo.new(0.35), { BackgroundTransparency = 1 }):Play()
+                card:TweenSize(UDim2.new(0, 360, 0, 0), "Out", "Quad", 0.35, true, function()
+                    pcall(function() backdrop:Destroy() end)
+                end)
+                task.wait(0.3)
+                if self.MainFrame then
+                    self.MainFrame.Visible = true
+                    self.MainFrame.Size = UDim2.new(0, 480, 0, 0)
+                    self.MainFrame:TweenSize(UDim2.new(0, 480, 0, 310), "Out", "Quad", 0.35, true)
+                end
+            else
+                setStatus("Key salah! Coba lagi.", "err")
+                TweenService:Create(inputBox, TweenInfo.new(0.15), { BackgroundColor3 = Color3.fromRGB(60, 25, 25) }):Play()
+                task.wait(0.2)
+                TweenService:Create(inputBox, TweenInfo.new(0.15), { BackgroundColor3 = Color3.fromRGB(20, 20, 20) }):Play()
+            end
+        end)
+    end
+
+    verifyBtn.MouseButton1Click:Connect(verify)
+    input.FocusLost:Connect(function(ep)
+        if ep then
+            verify()
+        end
+    end)
+    getKeyBtn.MouseButton1Click:Connect(function()
+        pcall(function()
+            if setclipboard then
+                setclipboard(getKeyLink)
+            end
+        end)
+        setStatus("Link key disalin ke clipboard!", "ok")
+        playSound(Sounds.Click, 0.4)
+    end)
+    discordBtn.MouseButton1Click:Connect(function()
+        pcall(function()
+            if setclipboard then
+                setclipboard(discordLink)
+            end
+        end)
+        setStatus("Link Discord disalin ke clipboard!", "ok")
+        playSound(Sounds.Click, 0.4)
+    end)
+
+    -- animasi masuk
+    card.Size = UDim2.new(0, 360, 0, 0)
+    card:TweenSize(UDim2.new(0, 360, 0, 440), "Out", "Quad", 0.4, true)
 end
 
 return Library
